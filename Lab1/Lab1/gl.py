@@ -4,6 +4,7 @@ from obj import Obj
 from numpi import Numpi
 
 
+
 V2= namedtuple('Point2', ['x', 'y'])
 V3= namedtuple('Point', ['x', 'y', 'z'])
 
@@ -258,6 +259,24 @@ class Renderer(object):
         self.glLine(v0, v1, clr or self.currColor)
         self.glLine(v1, v2, clr or self.currColor)
         self.glLine(v2, v0, clr or self.currColor)
+
+
+    def glTriangle_bc(self, A,B,C):
+        #VALORMINIM X
+        minX = round(min(A[0], B[0], C[0]))
+        maxX = round(max(A[0], B[0], C[0]))
+        minY = round(min(A[1], B[1], C[1]))
+        maxY = round(min(A[1], B[1], C[1]))
+
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                P = (x,y)
+                u,v,w = Numpi.barycentricCoords(A, B, C, P)
+                
+                if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
+                    self.glPoint(x, y)
+
+
 
     def glModelMatrix(self, translate=(0,0,0), scale=(1,1,1)):
         translation = ([[1, 0, 0, translate[0]],
