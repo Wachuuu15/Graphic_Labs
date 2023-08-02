@@ -20,5 +20,5 @@ def vertexShader(vertex, **kwards):
     return vt
 
 def fragmentShader(**kwards):
-    color = (1,1,1)
+    color = (random.random(), random.random(), random.random())
     return color 

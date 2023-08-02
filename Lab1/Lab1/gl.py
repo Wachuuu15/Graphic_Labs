@@ -102,41 +102,87 @@ class Renderer(object):
         if(0 <= x < self.width) and (0 <= y < self.height):
             self.pixels[x][y] = clr or self.currColor
 
-    
+    def glTriangle(self, A, B, C, clr = None):
+        if A[1] < B[1]:
+            A,B = B,A
+        if A[1] < C[1]:
+            A,C = C,A
+        if B[1] < C[1]:
+            B, C = C, B
 
-    def fill_polygon(self, vertices, point_to_skip):
-        if len(vertices) < 3:
-            return
-
-        # Encuentra los límites de la caja que contiene el polígono.
-        min_x = min(vertices, key=lambda v: v.x).x
-        max_x = max(vertices, key=lambda v: v.x).x
-        min_y = min(vertices, key=lambda v: v.y).y
-        max_y = max(vertices, key=lambda v: v.y).y
-
-        # Itera sobre cada punto (x, y) dentro de la caja del polígono
-        for x in range(min_x, max_x + 1):
-            for y in range(min_y, max_y + 1):
-                if self.is_point_inside_polygon(x, y, vertices) and (x, y) != point_to_skip:
-                    self.glPoint(x, y, color(1, 0.5, 0.5))
+        self.glLine(A, B, clr or self.currColor)
+        self.glLine(B, C, clr or self.currColor)
+        self.glLine(C, A, clr or self.currColor)
 
 
 
-    def is_point_inside_polygon(self, x, y, vertices):
-        n = len(vertices)
-        inside = False
-        p1x, p1y = vertices[0]
-        for i in range(n + 1):
-            p2x, p2y = vertices[i % n]
-            if y > min(p1y, p2y):
-                if y <= max(p1y, p2y):
-                    if x <= max(p1x, p2x):
-                        if p1y != p2y:
-                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                        if p1x == p2x or x <= xinters:
-                            inside = not inside
-            p1x, p1y = p2x, p2y
-        return inside
+    def flatBottom(vA, vB, vC):
+        try:
+            mBA = (vB[0] - vA[0]) / (vB[1] - vA[1])
+            mCA = (vC[0] - vA[0]) / (vC[1] - vA[1])
+
+        except:
+            pass
+        else:
+            x0 = vA[0]
+            x1 = vB[0]
+
+            for y in range(int(vA[1]), int(vC[1], -1)):
+                self.glLine(x0, y), (x1, y), clr or self
+                x0 += mCA
+                x1 += mCB
+
+
+    def flaytop(vA, vB, vC):
+        try:
+            mCA = (vC[0] - vA[0]) / (C[1] - vA[1])
+            mcB = (vC[0] - vA[0]) / (C[1] - vB[1])
+        except:
+            pass
+        else:
+            x0 = vA[0]
+            x1 = vB[0]
+
+            for y in range(int(vA[1]), int(vC[1], -1)):
+                self.glLine(x0, y), (x1, y), clr or self
+                x0 -= mCA
+                x1 -= mCB
+
+
+
+    #def fill_polygon(self, vertices, point_to_skip):
+    #    if len(vertices) < 3:
+    #        return
+
+    #    # Encuentra los límites de la caja que contiene el polígono.
+    #    min_x = min(vertices, key=lambda v: v.x).x
+    #    max_x = max(vertices, key=lambda v: v.x).x
+    #    min_y = min(vertices, key=lambda v: v.y).y
+    #    max_y = max(vertices, key=lambda v: v.y).y
+
+    #    # Itera sobre cada punto (x, y) dentro de la caja del polígono
+    #    for x in range(min_x, max_x + 1):
+    #        for y in range(min_y, max_y + 1):
+    #            if self.is_point_inside_polygon(x, y, vertices) and (x, y) != point_to_skip:
+    #                self.glPoint(x, y, color(1, 0.5, 0.5))
+
+
+
+    #def is_point_inside_polygon(self, x, y, vertices):
+    #    n = len(vertices)
+    #    inside = False
+    #    p1x, p1y = vertices[0]
+    #    for i in range(n + 1):
+    #        p2x, p2y = vertices[i % n]
+    #        if y > min(p1y, p2y):
+    #            if y <= max(p1y, p2y):
+    #                if x <= max(p1x, p2x):
+    #                    if p1y != p2y:
+    #                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+    #                    if p1x == p2x or x <= xinters:
+    #                        inside = not inside
+    #        p1x, p1y = p2x, p2y
+    #    return inside
 
 
     def glLine(self, v0, v1, clr= None):
@@ -242,17 +288,17 @@ class Renderer(object):
 
         primColor= None
 
-        if self.fragmentShader:
-            primColor= self.fragmentShader()
-            primColor = color(primColor[0],
-                              primColor[1],
-                              primColor[2])
-
-        else:
-            primColor= self.currColor
 
         for prim in primitive:
             if self.primitiveType == TRIANGLES:
+                if self.fragmentShader:
+                    primColor= self.fragmentShader()
+                    primColor = color(primColor[0],
+                                      primColor[1],
+                                      primColor[2])
+
+                else:
+                    primColor= self.currColor
                 self.glTriangle(prim[0], prim[1], prim[2], primColor)
 
     def glTriangle(self, v0, v1, v2, clr= None):
@@ -262,6 +308,10 @@ class Renderer(object):
 
 
     def glTriangle_bc(self, A,B,C):
+        self.glLine(A, B)
+        self.glLine(B, C)
+        self.glLine(C, A)
+
         #VALORMINIM X
         minX = round(min(A[0], B[0], C[0]))
         maxX = round(max(A[0], B[0], C[0]))
@@ -273,10 +323,8 @@ class Renderer(object):
                 P = (x,y)
                 u,v,w = Numpi.barycentricCoords(A, B, C, P)
                 
-                if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
+                if 0<=u and 0<=v and 0<=w:
                     self.glPoint(x, y)
-
-
 
     def glModelMatrix(self, translate=(0,0,0), scale=(1,1,1)):
         translation = ([[1, 0, 0, translate[0]],

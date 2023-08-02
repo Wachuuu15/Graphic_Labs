@@ -4,8 +4,8 @@ import shaders
 import random
 from obj import Obj
 
-width = 8000
-height = 8000
+width = 800
+height = 800
 
 rend = Renderer(width, height)
 
