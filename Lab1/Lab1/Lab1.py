@@ -70,7 +70,20 @@ rend = Renderer(width, height)
 #rend.fill_polygon(verti4, V2(580, 230))
 #rend.fill_polygon(verti5, V2(0, 0))
 
-triangle = [(100, 100), (450, 180), (250, 500)]
 
-rend.glTriangle_bc(triangle[0], triangle[1], triangle[2])
+rend.vertexShader = shaders.vertexShader
+rend.fragmentShader = shaders.fragmentShader
+
+
+rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+                translate=(80,20,0), scale=(20,20,20), rotate=(-90,0,0))
+rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+                translate=(80,300,0), scale=(20,20,20), rotate=(-90,0,-45))
+
+rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+                translate=(400,20,0), scale=(20,20,20), rotate=(-90,0,180))
+rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+                translate=(400,300,0), scale=(20,20,20), rotate=(-90,0,45))
+rend.glRender()
+
 rend.glFinish("output.bmp")

@@ -2,7 +2,7 @@ import struct
 from collections import namedtuple
 from obj import Obj
 from numpi import Numpi
-
+from texture import Texture
 
 
 V2= namedtuple('Point2', ['x', 'y'])
@@ -103,13 +103,6 @@ class Renderer(object):
             self.pixels[x][y] = clr or self.currColor
 
     def glTriangle(self, A, B, C, clr = None):
-        if A[1] < B[1]:
-            A,B = B,A
-        if A[1] < C[1]:
-            A,C = C,A
-        if B[1] < C[1]:
-            B, C = C, B
-
         self.glLine(A, B, clr or self.currColor)
         self.glLine(B, C, clr or self.currColor)
         self.glLine(C, A, clr or self.currColor)
@@ -148,8 +141,83 @@ class Renderer(object):
                 x0 -= mCA
                 x1 -= mCB
 
+    def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
+        minX = round(min(A[0], B[0], C[0]))
+        maxX = round(max(A[0], B[0], C[0]))
+        minY = round(min(A[1], B[1], C[1]))
+        maxY = round(max(A[1], B[1], C[1]))
+
+        colorA = (1,0,0)
+        colorB = (0,1,0)
+        colorC = (0,0,1)
+
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                P = (x,y)
+                
+                try :
+                    u,v,w = Numpi.barycentricCoords(A,B,C,P)
+                    if 0<=u<=1 and 0<=v<=1 and 0<=w<=1: 
+
+                        z = u * A[2] + v * B[2] + w * C[2]
+
+                        if z < self.zbuffer[x][y]:
+                            self.zbuffer[x][y] = z
+
+                            uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
+                                   u * vtA[1] + v * vtB[1] + w * vtC[1]
+                                  )
+
+                            if self.fragmentShader != None:
+                                colorP = self.fragmentShader(textCoords = uvs, 
+                                                             texture = self.activetexture)
+                                self.glPoint(x, y, color(colorP[0], colorP[1], colorP[2]))
+                            else:
+                                self.glPoint(x, y, colorP)
+                except:
+                    pass
 
 
+
+    def glModelMatrix(self, translate = (0,0,0), scale =(1,1,1), rotate=(0,0,0)):
+        #np.matrix
+        translation = [[1,0,0,translate[0]],
+                      [0,1,0,translate[1]],
+                      [0,0,1,translate[2]],
+                      [0,0,0,1]]
+        
+        scaleMat = [[scale[0],0,0,0],
+                   [0,scale[1],0,0],
+                   [0,0,scale[2],0],
+                   [0,0,0,1]]
+        
+        pitch = rotate[0] * math.pi/180
+        yaw = rotate[1] * math.pi/180
+        roll = rotate[2] * math.pi/180
+
+        Rx = [[1,0,0,0],
+            [0,math.cos(pitch),-math.sin(pitch),0 ],
+            [0, math.sin(pitch), math.cos(pitch),0],
+            [0,0,0,1]]
+        
+        Ry =[[math.cos(yaw),0,math.sin(yaw),0],
+            [0,1,0,0],
+            [-math.sin(yaw),0,math.cos(yaw),0],
+            [0,0,0,1]]
+        
+        Rz =[[math.cos(roll),-math.sin(roll),0,0],
+            [math.sin(roll),math.cos(roll),0,0],
+            [0,0,1,0],
+            [0,0,0,1]]
+        
+
+        Rxy = Numpi.multi4x4matrix(Rx,Ry)
+        MatrixRot = Numpi.multi4x4matrix(Rxy, Rz)
+        Mtr = Numpi.multi4x4matrix(translation, MatrixRot)
+        result = Numpi.multi4x4matrix(Mtr, scaleMat)
+        
+        return result #translation * scaleMat#multiplicación matriz 4 * 4
+    
     #def fill_polygon(self, vertices, point_to_skip):
     #    if len(vertices) < 3:
     #        return
@@ -186,16 +254,7 @@ class Renderer(object):
 
 
     def glLine(self, v0, v1, clr= None):
-        #Bresenham line algorith
-        #y= mx + b
-        
-        """ m= (v1.y - v0.y) / (v1.x - v0.x)
-        y= v0.y
-
-        for x in range(v0.x, v1.x + 1):
-            self.glPoint(x, int(y))
-            y += m """
-            
+ 
         x0 = int(v0[0])
         x1 = int(v1[0])        
         y0 = int(v0[1])
@@ -301,45 +360,8 @@ class Renderer(object):
                     primColor= self.currColor
                 self.glTriangle(prim[0], prim[1], prim[2], primColor)
 
-    def glTriangle(self, v0, v1, v2, clr= None):
-        self.glLine(v0, v1, clr or self.currColor)
-        self.glLine(v1, v2, clr or self.currColor)
-        self.glLine(v2, v0, clr or self.currColor)
 
 
-    def glTriangle_bc(self, A,B,C):
-        self.glLine(A, B)
-        self.glLine(B, C)
-        self.glLine(C, A)
-
-        #VALORMINIM X
-        minX = round(min(A[0], B[0], C[0]))
-        maxX = round(max(A[0], B[0], C[0]))
-        minY = round(min(A[1], B[1], C[1]))
-        maxY = round(min(A[1], B[1], C[1]))
-
-        for x in range(minX, maxX + 1):
-            for y in range(minY, maxY + 1):
-                P = (x,y)
-                u,v,w = Numpi.barycentricCoords(A, B, C, P)
-                
-                if 0<=u and 0<=v and 0<=w:
-                    self.glPoint(x, y)
-
-    def glModelMatrix(self, translate=(0,0,0), scale=(1,1,1)):
-        translation = ([[1, 0, 0, translate[0]],
-                       [0, 1, 0, translate[1]],
-                       [0, 0, 1, translate[2]],
-                       [0, 0, 0, 1]])
-
-        scaleMat = ([[scale[0], 0, 0, 0],
-                    [0, scale[1], 0, 0],
-                    [0, 0, scale[2], 0],
-                    [0, 0, 0, 1]])
-        
-        multMatrix = Numpi.multMatrices(translation, scaleMat)  # Añade numpi() para crear una instancia de la clase.
-        
-        return multMatrix
 
         
     def glFinish(self, filename):
