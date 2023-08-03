@@ -75,14 +75,14 @@ rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
 
 
-rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+rend.glLoadModel(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="air balloon.bmp",
                 translate=(80,20,0), scale=(20,20,20), rotate=(-90,0,0))
-rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+rend.glLoadModel(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="air balloon.bmp",
                 translate=(80,300,0), scale=(20,20,20), rotate=(-90,0,-45))
 
-rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+rend.glLoadModel(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="air balloon.bmp",
                 translate=(400,20,0), scale=(20,20,20), rotate=(-90,0,180))
-rend.glLoadModel(filename= "air balloon.obj", textureName="air balloon.bmp",
+rend.glLoadModel(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="air balloon.bmp",
                 translate=(400,300,0), scale=(20,20,20), rotate=(-90,0,45))
 rend.glRender()
 
