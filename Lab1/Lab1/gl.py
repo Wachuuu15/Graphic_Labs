@@ -44,6 +44,10 @@ class Model(object):
         self.rotate= rotate
         self.scale= scale
 
+            
+    def LoadTexture(self, textureName):
+        self.texture = Texture(textureName)
+
 class Renderer(object):
     def __init__(self, width, height):
         self.width = width
@@ -308,13 +312,20 @@ class Renderer(object):
                 limit += 1 
     
     def glLoadModule(self, filename, translate= (0,0,0), rotate=(0,0,0), scale= (1,1,1)):
-        self.objects.append(Model(filename, translate, rotate, scale))
+        model = Model(filename, translate, rotate, scale)
+        model.LoadTexture(textureName)
+        
+        self.objects.append(model)
 
     def glRender(self):
         transformedVerts = []
+        textCoords = []
         
         for model in self.objects:
-            modelMatrix= self.glModelMatrix(model.translate, model.scale)
+            self.activetexture= model.texture
+
+            modelMatrix = self.glModelMatrix(model.translate, model.scale, model.rotate)
+
 
             for face in model.faces:
                 vertCount= len(face)
@@ -345,23 +356,11 @@ class Renderer(object):
 
         primitive= self.glPrimitiveAssembly(transformedVerts)
 
-        primColor= None
-
 
         for prim in primitive:
             if self.primitiveType == TRIANGLES:
-                if self.fragmentShader:
-                    primColor= self.fragmentShader()
-                    primColor = color(primColor[0],
-                                      primColor[1],
-                                      primColor[2])
-
-                else:
-                    primColor= self.currColor
-                self.glTriangle(prim[0], prim[1], prim[2], primColor)
-
-
-
+                self.glTriangle_bc(prim[0], prim[1], prim[2], 
+                                   prim[3],prim[4],prim[5])
 
         
     def glFinish(self, filename):
