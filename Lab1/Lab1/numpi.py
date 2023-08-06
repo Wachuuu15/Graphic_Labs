@@ -30,7 +30,7 @@ class Numpi:
             
                 return None
 
-            u = areaPBC / areaABC
+            u = areaPCB / areaABC
             v = areaACP / areaABC
             w = 1 - u -v
 

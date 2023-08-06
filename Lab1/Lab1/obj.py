@@ -34,12 +34,7 @@ class Obj(object):
                     
                 self.normals.append(list(map(float, value.split(" "))))
 
-            elif prefix== "f": #Si es una cara
-                if value.endswith(" "):
-                    value = value.rstrip()
-                    
-                try:
-                    self.faces.append([list(map(int, vert.split("/"))) for vert in value.split(" ")])
-                
-                except ValueError:
-                    self.faces.append([list(map(lambda x: int(x) if x else 0, vert.split("/"))) for vert in value.split(" ")])
+            elif prefix == "f":
+                vals = value.rstrip()
+                self.faces.append([list(map(int, vert.split("/"))) for vert in vals.split(" ")])
+    

@@ -3,6 +3,7 @@ from collections import namedtuple
 from obj import Obj
 from numpi import Numpi
 from texture import Texture
+import math
 
 
 V2= namedtuple('Point2', ['x', 'y'])
@@ -101,49 +102,13 @@ class Renderer(object):
     def glClear(self):
         self.pixels = [[self.clearColor for y in range(self.height)]
                        for x in range(self.width)]
+        
+        self.zbuffer = [[float('inf') for y in range(self.height)]
+                       for x in range(self.width)]
 
     def glPoint(self, x, y, clr = None):
         if(0 <= x < self.width) and (0 <= y < self.height):
             self.pixels[x][y] = clr or self.currColor
-
-    def glTriangle(self, A, B, C, clr = None):
-        self.glLine(A, B, clr or self.currColor)
-        self.glLine(B, C, clr or self.currColor)
-        self.glLine(C, A, clr or self.currColor)
-
-
-
-    def flatBottom(vA, vB, vC):
-        try:
-            mBA = (vB[0] - vA[0]) / (vB[1] - vA[1])
-            mCA = (vC[0] - vA[0]) / (vC[1] - vA[1])
-
-        except:
-            pass
-        else:
-            x0 = vA[0]
-            x1 = vB[0]
-
-            for y in range(int(vA[1]), int(vC[1], -1)):
-                self.glLine(x0, y), (x1, y), clr or self
-                x0 += mCA
-                x1 += mCB
-
-
-    def flaytop(vA, vB, vC):
-        try:
-            mCA = (vC[0] - vA[0]) / (C[1] - vA[1])
-            mcB = (vC[0] - vA[0]) / (C[1] - vB[1])
-        except:
-            pass
-        else:
-            x0 = vA[0]
-            x1 = vB[0]
-
-            for y in range(int(vA[1]), int(vC[1], -1)):
-                self.glLine(x0, y), (x1, y), clr or self
-                x0 -= mCA
-                x1 -= mCB
 
     def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
         minX = round(min(A[0], B[0], C[0]))
@@ -199,26 +164,26 @@ class Renderer(object):
         yaw = rotate[1] * math.pi/180
         roll = rotate[2] * math.pi/180
 
-        Rx = [[1,0,0,0],
+        pitchMath = [[1,0,0,0],
             [0,math.cos(pitch),-math.sin(pitch),0 ],
             [0, math.sin(pitch), math.cos(pitch),0],
             [0,0,0,1]]
         
-        Ry =[[math.cos(yaw),0,math.sin(yaw),0],
+        yawMath =[[math.cos(yaw),0,math.sin(yaw),0],
             [0,1,0,0],
             [-math.sin(yaw),0,math.cos(yaw),0],
             [0,0,0,1]]
         
-        Rz =[[math.cos(roll),-math.sin(roll),0,0],
+        rollMath =[[math.cos(roll),-math.sin(roll),0,0],
             [math.sin(roll),math.cos(roll),0,0],
             [0,0,1,0],
             [0,0,0,1]]
         
 
-        Rxy = Numpi.multi4x4matrix(Rx,Ry)
-        MatrixRot = Numpi.multi4x4matrix(Rxy, Rz)
-        Mtr = Numpi.multi4x4matrix(translation, MatrixRot)
-        result = Numpi.multi4x4matrix(Mtr, scaleMat)
+        Rxy = Numpi.multMatrices(pitchMath,yawMath)
+        MatrixRot = Numpi.multMatrices(Rxy, rollMath)
+        Mtr = Numpi.multMatrices(translation, MatrixRot)
+        result = Numpi.multMatrices(Mtr, scaleMat)
         
         return result #translation * scaleMat#multiplicación matriz 4 * 4
     
@@ -311,9 +276,9 @@ class Renderer(object):
 
                 limit += 1 
     
-    def glLoadModule(self, filename, translate= (0,0,0), rotate=(0,0,0), scale= (1,1,1)):
+    def glLoadModel(self, filename, translate= (0,0,0), rotate=(0,0,0), scale= (1,1,1)):
         model = Model(filename, translate, rotate, scale)
-        model.LoadTexture(textureName)
+        #model.LoadTexture(textureName)
         
         self.objects.append(model)
 
