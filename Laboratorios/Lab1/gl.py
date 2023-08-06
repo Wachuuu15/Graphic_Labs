@@ -276,7 +276,7 @@ class Renderer(object):
 
                 limit += 1 
     
-    def glLoadModel(self, filename, translate= (0,0,0), rotate=(0,0,0), scale= (1,1,1)):
+    def glLoadModule(self, filename, translate= (0,0,0), rotate=(0,0,0), scale= (1,1,1)):
         model = Model(filename, translate, rotate, scale)
         #model.LoadTexture(textureName)
         
