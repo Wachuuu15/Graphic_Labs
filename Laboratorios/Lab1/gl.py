@@ -5,7 +5,6 @@ from numpi import Numpi
 from texture import Texture
 import math
 
-
 V2= namedtuple('Point2', ['x', 'y'])
 V3= namedtuple('Point', ['x', 'y', 'z'])
 
@@ -67,22 +66,33 @@ class Renderer(object):
         self.primitiveType = TRIANGLES
         self.vertexBuffer = []
 
+
+        self.activetexture = None
+
     def glAddVertices(self, vertx):
         for vert in vertx:
             self.vertexBuffer.append(vert)
 
-    def glPrimitiveAssembly(self, tVerts):
+    
+    def glPrimitiveAssemly(self, tVerts, tTextCoords):
         primitives = []
-
         if self.primitiveType == TRIANGLES:
             for i in range(0, len(tVerts), 3):
                 triangle = []
-                triangle.append( tVerts[i] )
-                triangle.append( tVerts[i + 1])
-                triangle.append( tVerts[i + 2])
-                primitives.append(triangle)
+                #vertices
+                triangle.append(tVerts[i])
+                triangle.append(tVerts[i+1])
+                triangle.append(tVerts[i+2])
+                #texturas
+                triangle.append(tTextCoords[i])
+                triangle.append(tTextCoords[i+1])
+                triangle.append(tTextCoords[i+2])
 
+                primitives.append(triangle)
+            
+        
         return primitives
+
 
     def draw_lines(self, verti):
         i = 0
@@ -187,41 +197,6 @@ class Renderer(object):
         
         return result #translation * scaleMat#multiplicación matriz 4 * 4
     
-    #def fill_polygon(self, vertices, point_to_skip):
-    #    if len(vertices) < 3:
-    #        return
-
-    #    # Encuentra los límites de la caja que contiene el polígono.
-    #    min_x = min(vertices, key=lambda v: v.x).x
-    #    max_x = max(vertices, key=lambda v: v.x).x
-    #    min_y = min(vertices, key=lambda v: v.y).y
-    #    max_y = max(vertices, key=lambda v: v.y).y
-
-    #    # Itera sobre cada punto (x, y) dentro de la caja del polígono
-    #    for x in range(min_x, max_x + 1):
-    #        for y in range(min_y, max_y + 1):
-    #            if self.is_point_inside_polygon(x, y, vertices) and (x, y) != point_to_skip:
-    #                self.glPoint(x, y, color(1, 0.5, 0.5))
-
-
-
-    #def is_point_inside_polygon(self, x, y, vertices):
-    #    n = len(vertices)
-    #    inside = False
-    #    p1x, p1y = vertices[0]
-    #    for i in range(n + 1):
-    #        p2x, p2y = vertices[i % n]
-    #        if y > min(p1y, p2y):
-    #            if y <= max(p1y, p2y):
-    #                if x <= max(p1x, p2x):
-    #                    if p1y != p2y:
-    #                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-    #                    if p1x == p2x or x <= xinters:
-    #                        inside = not inside
-    #        p1x, p1y = p2x, p2y
-    #    return inside
-
-
     def glLine(self, v0, v1, clr= None):
  
         x0 = int(v0[0])
@@ -276,9 +251,9 @@ class Renderer(object):
 
                 limit += 1 
     
-    def glLoadModule(self, filename, translate= (0,0,0), rotate=(0,0,0), scale= (1,1,1)):
+    def glLoadModule(self, filename, textureName, translate = (0,0,0),rotate = (0,0,0), scale = (1,1,1)):
         model = Model(filename, translate, rotate, scale)
-        #model.LoadTexture(textureName)
+        model.LoadTexture(textureName)
         
         self.objects.append(model)
 
@@ -319,7 +294,23 @@ class Renderer(object):
                     transformedVerts.append(v1)
                     transformedVerts.append(v2)
 
-        primitive= self.glPrimitiveAssembly(transformedVerts)
+                    
+                
+                vt0 = model.texcoords[face[0][1]-1]
+                vt1 = model.texcoords[face[1][1]-1]
+                vt2 = model.texcoords[face[2][1]-1]
+                if vertCount == 4:
+                    vt3 =  model.texcoords[face[3][1]-1]
+                textCoords.append(vt0)
+                textCoords.append(vt1)
+                textCoords.append(vt2)
+                if vertCount == 4:
+                    textCoords.append(vt0)
+                    textCoords.append(vt2)
+                    textCoords.append(vt3)
+
+
+        primitive= self.glPrimitiveAssembly(transformedVerts, textCoords)
 
 
         for prim in primitive:

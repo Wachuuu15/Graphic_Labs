@@ -12,7 +12,7 @@ rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
 
 
-rend.glLoadModule(filename= "blooddragon.obj", #textureName="air balloon.bmp",
+rend.glLoadModule(filename= "blooddragon.obj", textureName="dino2.bmp",
                 translate=(80,20,0), 
                 scale=(20,20,20), 
                 rotate=(-90,0,0))
