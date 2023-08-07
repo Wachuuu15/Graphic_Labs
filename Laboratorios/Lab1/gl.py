@@ -36,7 +36,7 @@ class Model(object):
         model= Obj(filename)
 
         self.vertices= model.vertices
-        self.textcoords= model.texcoords
+        self.texcoords = model.texcoords
         self.normals= model.normals
         self.faces= model.faces
 
@@ -260,63 +260,57 @@ class Renderer(object):
     def glRender(self):
         transformedVerts = []
         textCoords = []
-        
+
         for model in self.objects:
+            
             self.activetexture= model.texture
 
-            modelMatrix = self.glModelMatrix(model.translate, model.scale, model.rotate)
-
+            mMat = self.glModelMatrix(model.translate, model.scale, model.rotate)
 
             for face in model.faces:
-                vertCount= len(face)
+                verCount = len(face)
 
-                v0= model.vertices[face[0][0] - 1]
-                v1= model.vertices[face[1][0] - 1]
-                v2= model.vertices[face[2][0] - 1]
-
-                if vertCount==4:
-                    v3= model.vertices[face[3][0] - 1]
+                v0 = model.vertices[ face[0][0]-1]
+                v1 = model.vertices[ face[1][0]-1]
+                v2 = model.vertices[ face[2][0]-1]
+                if verCount == 4:
+                    v3 = model.vertices[ face[3][0]-1]
 
                 if self.vertexShader:
-                    v0= self.vertexShader(v0, modelMatrix= modelMatrix)
-                    v1= self.vertexShader(v1, modelMatrix= modelMatrix)
-                    v2= self.vertexShader(v2, modelMatrix= modelMatrix)
-
-                    if vertCount==4:
-                        v3= self.vertexShader(v3, modelMatrix= modelMatrix)
+                    v0 = self.vertexShader(v0, modelMatrix = mMat)
+                    v1 = self.vertexShader(v1, modelMatrix = mMat)
+                    v2 = self.vertexShader(v2, modelMatrix = mMat)
+                    if verCount == 4:
+                        v3 = self.vertexShader(v3, modelMatrix = mMat)
 
                 transformedVerts.append(v0)
                 transformedVerts.append(v1)
                 transformedVerts.append(v2)
-
-                if vertCount==4:
-                    transformedVerts.append(v3)
-                    transformedVerts.append(v1)
+                if verCount == 4:
+                    transformedVerts.append(v0)
                     transformedVerts.append(v2)
-
-                    
+                    transformedVerts.append(v3)
                 
                 vt0 = model.texcoords[face[0][1]-1]
                 vt1 = model.texcoords[face[1][1]-1]
                 vt2 = model.texcoords[face[2][1]-1]
-                if vertCount == 4:
+                if verCount == 4:
                     vt3 =  model.texcoords[face[3][1]-1]
                 textCoords.append(vt0)
                 textCoords.append(vt1)
                 textCoords.append(vt2)
-                if vertCount == 4:
+                if verCount == 4:
                     textCoords.append(vt0)
                     textCoords.append(vt2)
                     textCoords.append(vt3)
 
+        primitives = self.glPrimitiveAssemly(transformedVerts, textCoords)       
 
-        primitive= self.glPrimitiveAssembly(transformedVerts, textCoords)
-
-
-        for prim in primitive:
+        for prim in primitives: 
             if self.primitiveType == TRIANGLES:
                 self.glTriangle_bc(prim[0], prim[1], prim[2], 
                                    prim[3],prim[4],prim[5])
+
 
         
     def glFinish(self, filename):
