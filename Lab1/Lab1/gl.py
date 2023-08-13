@@ -68,6 +68,7 @@ class Renderer(object):
 
 
         self.activetexture = None
+        self.CamMatrix()
 
     def glAddVertices(self, vertx):
         for vert in vertx:
@@ -156,6 +157,13 @@ class Renderer(object):
                 except:
                     pass
 
+    def glCamMatrix(self, translate=(0,0,0) , rotate = (0,0,0)):
+        #matriz de camara
+        self.CamMatrix = self.glModelMatrix(translate, rotate)
+
+        #la matriz de vista es igual a la inversa de la camara
+
+        self.viewMatrix =  Numpi.invertir_matriz(self.CamMatrix)
 
 
     def glModelMatrix(self, translate = (0,0,0), scale =(1,1,1), rotate=(0,0,0)):

@@ -35,3 +35,30 @@ class Numpi:
             w = 1 - u -v
 
             return u, v, w 
+    
+    
+    def invertir_matriz(matriz):
+        n = len(matriz)
+        matriz_identidad = [[1 if i == j else 0 for j in range(n)] for i in range(n)]
+
+        for i in range(n):
+            diagonal_elem = matriz[i][i]
+            Numpi.escalar_fila(matriz, i, 1.0 / diagonal_elem)
+            Numpi.escalar_fila(matriz_identidad, i, 1.0 / diagonal_elem)
+
+            for j in range(n):
+                if j != i:
+                    factor = -matriz[j][i]
+                    Numpi.sumar_filas(matriz, j, i, factor)
+                    Numpi.sumar_filas(matriz_identidad, j, i, factor)
+
+        return matriz_identidad
+
+    @staticmethod
+    def escalar_fila(matriz, fila, escalar):
+        matriz[fila] = [elem * escalar for elem in matriz[fila]]
+
+    @staticmethod
+    def sumar_filas(matriz, fila_destino, fila_origen, factor):
+        matriz[fila_destino] = [elem_dest + factor * elem_orig for elem_dest, elem_orig in zip(matriz[fila_destino], matriz[fila_origen])]
+
