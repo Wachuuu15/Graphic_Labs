@@ -68,7 +68,10 @@ class Renderer(object):
 
 
         self.activetexture = None
+
+        self.glViewport(0,0,self.width, self.height)
         self.CamMatrix()
+        self.projectionMatrix()
 
     def glAddVertices(self, vertx):
         for vert in vertx:
@@ -157,6 +160,18 @@ class Renderer(object):
                 except:
                     pass
 
+    def glViewport(self, x, y, width, height):
+        self.vpX =  x
+        self.vpY =  y 
+        self.vpWidth = width
+        self.vpHeight = height 
+
+        self.vpMatrix = [[self.vpWidth/2,0,0,self.vpX + self.vpWidth/2],
+                        [0,self.vpHeight/2,0,self.vpY + self.vpHeight/2],
+                        [0,0,0.5,0.5],
+                        [0,0,0,1]]
+
+
     def glCamMatrix(self, translate=(0,0,0) , rotate = (0,0,0)):
         #matriz de camara
         self.CamMatrix = self.glModelMatrix(translate, rotate)
@@ -164,6 +179,18 @@ class Renderer(object):
         #la matriz de vista es igual a la inversa de la camara
 
         self.viewMatrix =  Numpi.invertir_matriz(self.CamMatrix)
+
+
+    def glProjectionMatrix(self, fov = 60, n= 0.1, f = 1000):
+        aspectRatio = self.vpWidth / self.vpHeight
+
+        t = math.tan((fov * math.pi/180)/2)  * n
+        r = t * aspectRatio
+
+        self.projectionMatrix = [[n/r,0,0,0],
+                                [0,n/t,0,0],
+                                [0,0,-(f+n)/(f-n),-2*f*n/(f-n)],
+                                [0,0,-1,0]]
 
 
     def glModelMatrix(self, translate = (0,0,0), scale =(1,1,1), rotate=(0,0,0)):
