@@ -66,11 +66,10 @@ class Renderer(object):
         self.primitiveType = TRIANGLES
         self.vertexBuffer = []
 
-
         self.activetexture = None
 
         self.glViewport(0,0,self.width, self.height)
-        self.CamMatrix()
+        self.glCamMatrix()
         self.projectionMatrix()
 
     def glAddVertices(self, vertx):
@@ -177,9 +176,7 @@ class Renderer(object):
         self.CamMatrix = self.glModelMatrix(translate, rotate)
 
         #la matriz de vista es igual a la inversa de la camara
-
         self.viewMatrix =  Numpi.invertir_matriz(self.CamMatrix)
-
 
     def glProjectionMatrix(self, fov = 60, n= 0.1, f = 1000):
         aspectRatio = self.vpWidth / self.vpHeight
@@ -312,11 +309,26 @@ class Renderer(object):
                     v3 = model.vertices[ face[3][0]-1]
 
                 if self.vertexShader:
-                    v0 = self.vertexShader(v0, modelMatrix = mMat)
-                    v1 = self.vertexShader(v1, modelMatrix = mMat)
-                    v2 = self.vertexShader(v2, modelMatrix = mMat)
+                    v0 = self.vertexShader(v0, 
+                                           modelMatrix = mMat,
+                                           viewMatrix = self.viewMatrix,
+                                           projectionMatrix = self.projectionMatrix,
+                                           vpMatrix = self.vpMatrix)
+                    v1 = self.vertexShader(v1, 
+                                           modelMatrix = mMat,
+                                           viewMatrix = self.viewMatrix,
+                                           projectionMatrix = self.projectionMatrix,
+                                           vpMatrix = self.vpMatrix)
+                    v2 = self.vertexShader(v2,
+                                           modelMatrix = mMat,
+                                           viewMatrix = self.viewMatrix,
+                                           projectionMatrix = self.projectionMatrix,
+                                           vpMatrix = self.vpMatrix)
                     if verCount == 4:
-                        v3 = self.vertexShader(v3, modelMatrix = mMat)
+                        v3 = self.vertexShader(v3, modelMatrix = mMat,
+                                                viewMatrix = self.viewMatrix,
+                                                projectionMatrix = self.projectionMatrix,
+                                                vpMatrix = self.vpMatrix)
 
                 transformedVerts.append(v0)
                 transformedVerts.append(v1)
