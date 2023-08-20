@@ -11,11 +11,14 @@ rend = Renderer(width, height)
 rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
 
+rend.glLookAt(camPos=(0,0,0),
+               eyePos=(0,0,-5))
 
 rend.glLoadModule(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="hea.bmp",
-                translate=(0,0,10), 
-                scale=(1,1,2), 
-                rotate=(0,0,0))
+                    translate=(0,0,-5), 
+                    rotate= (0,0,0),
+                    scale=(1.5,1.5,1.5))
+
 
 # rend.glLoadModule(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="hea.bmp",
 #                 translate=(140,500,0), 

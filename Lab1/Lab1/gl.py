@@ -4,6 +4,8 @@ from obj import Obj
 from numpi import Numpi
 from texture import Texture
 import math
+instance = Numpi()
+
 
 V2= namedtuple('Point2', ['x', 'y'])
 V3= namedtuple('Point', ['x', 'y', 'z'])
@@ -70,7 +72,7 @@ class Renderer(object):
 
         self.glViewport(0,0,self.width, self.height)
         self.glCamMatrix()
-        self.projectionMatrix()
+        self.glProjectionMatrix()
 
     def glAddVertices(self, vertx):
         for vert in vertx:
@@ -176,7 +178,26 @@ class Renderer(object):
         self.CamMatrix = self.glModelMatrix(translate, rotate)
 
         #la matriz de vista es igual a la inversa de la camara
-        self.viewMatrix =  Numpi.invertir_matriz(self.CamMatrix)
+        self.viewMatrix =  instance.invMatrix(self.CamMatrix)
+
+    def glLookAt(self, camPos = (0,0,0), eyePos = (0,0,0)):
+        worldUp = (0,1,0)
+
+        foward = Numpi.substractionVectors(camPos,eyePos)
+        foward = Numpi.normalizeVector(foward)
+
+        right = Numpi.prodCrossV(worldUp,foward)
+        right = Numpi.normalizeVector(right)
+
+        up = Numpi.prodCrossV(foward,right)
+        up = Numpi.normalizeVector(up)
+
+        self.camMatrix = [[right[0],up[0],foward[0],camPos[0]],
+                          [right[1],up[1],foward[1],camPos[1]],
+                          [right[2],up[2],foward[2],camPos[2]],
+                          [0,0,0,1]]
+        
+        self.viewMatrix =  instance.invMatrix(self.CamMatrix)
 
     def glProjectionMatrix(self, fov = 60, n= 0.1, f = 1000):
         aspectRatio = self.vpWidth / self.vpHeight

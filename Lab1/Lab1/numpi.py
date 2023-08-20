@@ -1,3 +1,4 @@
+import math
 class Numpi:
     def multMatrices(m1, m2):
         if len(m1[0]) == len(m2):
@@ -36,31 +37,99 @@ class Numpi:
 
             return u, v, w 
     
+    def getMatrixMinor(self,matrix,i,j):
+        return [row[:j] + row[j+1:] for row in (matrix[:i]+matrix[i+1:])] #minor matrix
+
+    def matrixDeterm(self,matrix):
+        if len(matrix) == 2: #case for 2x2 matrix
+            return matrix[0][0]*matrix[1][1]-matrix[0][1]*matrix[1][0]
+        determinant = 0
+        for c in range(len(matrix)):
+            determinant += ((-1) ** c) * matrix[0][c] * matrixDeterm(getMatrixMinor(matrix, 0, c))
+        return determinant
+
+    def invMatrix(self,mx):
+        det = matrixDeterm(mx)
+        if det == 0:
+            print('Determinant is zero')
+            return
+
+        if len(mx) == 2:  # case for 2x2 matrix
+            return [[mx[1][1] / det, -1 * mx[0][1] / det],
+                    [-1 * mx[1][0] / det, mx[0][0] / det]]
+
+        cofactors = []
+        for i in range(len(mx)):
+            cofactRow = []
+            for j in range(len(mx)):
+                minorValue = getMatrixMinor(mx, i, j)
+                cofactRow.append(((-1) ** (i + j)) * matrixDeterm(minorValue))
+            cofactors.append(cofactRow)
+
+        inverse = list(map(list, zip(*cofactors)))  # ...
+        for i in range(len(inverse)):
+            for j in range(len(inverse)):
+                inverse[i][j] = inverse[i][j] / det
+        return inverse
+
+    def substractionVectors(a,b):
+        return (a[0]-b[0], a[1]-b[1], a[2]-b[2])
+
+    def prodCrossV(a,b):
+        cross_product = [a[1] * b[2] - a[2] * b[1],
+                        a[2] * b[0] - a[0] * b[2],
+                        a[0] * b[1] - a[1] * b[0]]
+        return cross_product
+
+    def normalizeVector(vector):
+        vectorList = list(vector)
+        magnitude = math.sqrt(sum(e ** 2 for e in vectorList))
+        if magnitude == 0: #error if magnitude is 0
+            print("Unable to normalize")
+        
+        normVector = [e / magnitude for e in vectorList]
+        return tuple(normVector)
+        
+    def dotProd(v1, v2):
+        return sum(x*y for x, y in zip(v1, v2))
     
-    def invertir_matriz(matriz):
-        n = len(matriz)
-        matriz_identidad = [[1 if i == j else 0 for j in range(n)] for i in range(n)]
+def getMatrixMinor(matrix,i,j):
+    return [row[:j] + row[j+1:] for row in (matrix[:i]+matrix[i+1:])] #minor matrix
 
-        for i in range(n):
-            diagonal_elem = matriz[i][i]
-            if diagonal_elem == 0:
-                raise ValueError("La matriz no tiene inversa")
+def matrixDeterm(matrix):
+    if len(matrix) == 2: #case for 2x2 matrix
+        return matrix[0][0]*matrix[1][1]-matrix[0][1]*matrix[1][0]
+    determinant = 0
+    for c in range(len(matrix)):
+        determinant += ((-1) ** c) * matrix[0][c] * matrixDeterm(getMatrixMinor(matrix, 0, c))
+    return determinant
 
-            Numpi.escalar_fila(matriz, i, 1.0 / diagonal_elem)
-            Numpi.escalar_fila(matriz_identidad, i, 1.0 / diagonal_elem)
+def invMatrix(mx):
+    det = matrixDeterm(mx)
+    if det == 0:
+        print('Determinant is zero')
+        return
 
-            for j in range(n):
-                if j != i:
-                    factor = -matriz[j][i]
-                    Numpi.sumar_filas(matriz, j, i, factor)
-                    Numpi.sumar_filas(matriz_identidad, j, i, factor)
+    if len(mx) == 2:  # case for 2x2 matrix
+        return [[mx[1][1] / det, -1 * mx[0][1] / det],
+                [-1 * mx[1][0] / det, mx[0][0] / det]]
 
-        return matriz_identidad
+    cofactors = []
+    for i in range(len(mx)):
+        cofactRow = []
+        for j in range(len(mx)):
+            minorValue = getMatrixMinor(mx, i, j)
+            cofactRow.append(((-1) ** (i + j)) * matrixDeterm(minorValue))
+        cofactors.append(cofactRow)
 
-    @staticmethod
-    def escalar_fila(matriz, fila, escalar):
-        matriz[fila] = [elem * escalar for elem in matriz[fila]]
+    inverse = list(map(list, zip(*cofactors)))  # ...
+    for i in range(len(inverse)):
+        for j in range(len(inverse)):
+            inverse[i][j] = inverse[i][j] / det
+    return inverse
+    
+matrix = [[1,2,3],
+          [4,5,6],
+          [7,88,9]]
 
-    @staticmethod
-    def sumar_filas(matriz, fila_destino, fila_origen, factor):
-        matriz[fila_destino] = [elem_dest + factor * elem_orig for elem_dest, elem_orig in zip(matriz[fila_destino], matriz[fila_origen])]
+print(invMatrix(matrix))
