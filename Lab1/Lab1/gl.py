@@ -175,11 +175,12 @@ class Renderer(object):
 
     def glCamMatrix(self, translate=(0,0,0) , rotate = (0,0,0)):
         #matriz de camara
-        self.CamMatrix = self.glModelMatrix(translate, rotate)
-
-        #la matriz de vista es igual a la inversa de la camara
-        self.viewMatrix =  instance.invMatrix(self.CamMatrix)
-
+         #Crea matrix de camara
+        self.camMatrix = self.glModelMatrix(translate, rotate)
+        
+        #Matriz de vista es igual a la inversa de la camara
+        self.viewMatrix = Numpi.inverse_matrix(self.camMatrix)
+          
     def glLookAt(self, camPos = (0,0,0), eyePos = (0,0,0)):
         worldUp = (0,1,0)
 

@@ -37,99 +37,66 @@ class Numpi:
 
             return u, v, w 
     
-    def getMatrixMinor(self,matrix,i,j):
-        return [row[:j] + row[j+1:] for row in (matrix[:i]+matrix[i+1:])] #minor matrix
+    def inverse_matrix(matrix):
+        if len(matrix) != 4 or len(matrix[0]) != 4:
+            print("Matriz debería ser de 4x4.")
+        # Create an augmented matrix with identity matrix
+        augmented_matrix = [row + [1 if i == j else 0 for j in range(4)] for i, row in enumerate(matrix)]
 
-    def matrixDeterm(self,matrix):
-        if len(matrix) == 2: #case for 2x2 matrix
-            return matrix[0][0]*matrix[1][1]-matrix[0][1]*matrix[1][0]
-        determinant = 0
-        for c in range(len(matrix)):
-            determinant += ((-1) ** c) * matrix[0][c] * matrixDeterm(getMatrixMinor(matrix, 0, c))
-        return determinant
+        # Apply Gauss-Jordan elimination
+        for col in range(4):
+            pivot_row = max(range(col, 4), key=lambda i: abs(augmented_matrix[i][col]))
+            augmented_matrix[col], augmented_matrix[pivot_row] = augmented_matrix[pivot_row], augmented_matrix[col]
 
-    def invMatrix(self,mx):
-        det = matrixDeterm(mx)
-        if det == 0:
-            print('Determinant is zero')
-            return
+            pivot_value = augmented_matrix[col][col]
+            if pivot_value == 0:
+                print("La matriz es singular.")
 
-        if len(mx) == 2:  # case for 2x2 matrix
-            return [[mx[1][1] / det, -1 * mx[0][1] / det],
-                    [-1 * mx[1][0] / det, mx[0][0] / det]]
+            for j in range(col, 8):
+                augmented_matrix[col][j] /= pivot_value
 
-        cofactors = []
-        for i in range(len(mx)):
-            cofactRow = []
-            for j in range(len(mx)):
-                minorValue = getMatrixMinor(mx, i, j)
-                cofactRow.append(((-1) ** (i + j)) * matrixDeterm(minorValue))
-            cofactors.append(cofactRow)
+            for i in range(4):
+                if i != col:
+                    factor = augmented_matrix[i][col]
+                    for j in range(col, 8):
+                        augmented_matrix[i][j] -= factor * augmented_matrix[col][j]
 
-        inverse = list(map(list, zip(*cofactors)))  # ...
-        for i in range(len(inverse)):
-            for j in range(len(inverse)):
-                inverse[i][j] = inverse[i][j] / det
+        inverse = [row[4:] for row in augmented_matrix]
         return inverse
 
-    def substractionVectors(a,b):
-        return (a[0]-b[0], a[1]-b[1], a[2]-b[2])
-
-    def prodCrossV(a,b):
-        cross_product = [a[1] * b[2] - a[2] * b[1],
-                        a[2] * b[0] - a[0] * b[2],
-                        a[0] * b[1] - a[1] * b[0]]
-        return cross_product
-
-    def normalizeVector(vector):
-        vectorList = list(vector)
-        magnitude = math.sqrt(sum(e ** 2 for e in vectorList))
-        if magnitude == 0: #error if magnitude is 0
-            print("Unable to normalize")
+    def norm_vector(vector):
+        vector = list(vector)
+        magnitud = math.sqrt(sum(v**2 for v in vector))
         
-        normVector = [e / magnitude for e in vectorList]
-        return tuple(normVector)
+        if magnitud == 0:
+            return vector
         
-    def dotProd(v1, v2):
-        return sum(x*y for x, y in zip(v1, v2))
+        norm = [v / magnitud for v in vector]
+        norm = tuple(norm)
+        return norm
+
+    def vecResta(v1, v2):
+        resta = (v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2])
+        return resta
+
+    def vecMulti(v1, v2):
+        if len(v1) != len(v2):
+            print("No hay misma cantidad de vectores")
+        
+        x1, y1, z1 = v1
+        x2, y2, z2 = v2
+        
+        rx = y1 * z2 - z1 * y2
+        ry = z1 * x2 - x1 * z2
+        rz = x1 * y2 - y1 * x2
+
+        multi = (rx, ry, rz)
+        return multi
     
-def getMatrixMinor(matrix,i,j):
-    return [row[:j] + row[j+1:] for row in (matrix[:i]+matrix[i+1:])] #minor matrix
-
-def matrixDeterm(matrix):
-    if len(matrix) == 2: #case for 2x2 matrix
-        return matrix[0][0]*matrix[1][1]-matrix[0][1]*matrix[1][0]
-    determinant = 0
-    for c in range(len(matrix)):
-        determinant += ((-1) ** c) * matrix[0][c] * matrixDeterm(getMatrixMinor(matrix, 0, c))
-    return determinant
-
-def invMatrix(mx):
-    det = matrixDeterm(mx)
-    if det == 0:
-        print('Determinant is zero')
-        return
-
-    if len(mx) == 2:  # case for 2x2 matrix
-        return [[mx[1][1] / det, -1 * mx[0][1] / det],
-                [-1 * mx[1][0] / det, mx[0][0] / det]]
-
-    cofactors = []
-    for i in range(len(mx)):
-        cofactRow = []
-        for j in range(len(mx)):
-            minorValue = getMatrixMinor(mx, i, j)
-            cofactRow.append(((-1) ** (i + j)) * matrixDeterm(minorValue))
-        cofactors.append(cofactRow)
-
-    inverse = list(map(list, zip(*cofactors)))  # ...
-    for i in range(len(inverse)):
-        for j in range(len(inverse)):
-            inverse[i][j] = inverse[i][j] / det
-    return inverse
-    
-matrix = [[1,2,3],
-          [4,5,6],
-          [7,88,9]]
-
-print(invMatrix(matrix))
+    def productoPunto(v1, v2):
+            if len(v1) != 3 or len(v2) != 3:
+                print("Los vectores deben tener tres componentes cada uno.")
+            
+            producto = sum(component1 * component2 for component1, component2 in zip(v1, v2))
+            
+            return producto

@@ -11,14 +11,11 @@ rend = Renderer(width, height)
 rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
 
-rend.glLookAt(camPos=(0,0,0),
-               eyePos=(0,0,-5))
 
-rend.glLoadModule(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="hea.bmp",
-                    translate=(0,0,-5), 
-                    rotate= (0,0,0),
-                    scale=(1.5,1.5,1.5))
-
+rend.glLoadModule(filename= "pinguin_001.obj", textureName="model.bmp",
+                    translate = (0,-2,-5),
+                    rotate = (0, 140, 0),
+                    scale = (3,3,3))
 
 # rend.glLoadModule(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="hea.bmp",
 #                 translate=(140,500,0), 
@@ -39,4 +36,4 @@ rend.glLoadModule(filename= "13499_Balloon_Cluster_v1_L2.obj", textureName="hea.
 
 rend.glRender()
 
-rend.glFinish("output1.bmp")
+rend.glFinish("output2.bmp")
