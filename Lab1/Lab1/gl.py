@@ -4,8 +4,6 @@ from obj import Obj
 from numpi import Numpi
 from texture import Texture
 import math
-instance = Numpi()
-
 
 V2= namedtuple('Point2', ['x', 'y'])
 V3= namedtuple('Point', ['x', 'y', 'z'])
@@ -125,41 +123,65 @@ class Renderer(object):
         if(0 <= x < self.width) and (0 <= y < self.height):
             self.pixels[x][y] = clr or self.currColor
 
-    def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
+
+
+    def glTriangle(self, verts, texCoords,normals):
+        # Rederización de un triángulo usando coordenadas baricéntricas.
+        # Se reciben los vertices A, B y C y las coordenadas de
+        # textura vtA, vtB y vtC
+        A= verts[0]
+        B= verts[1]
+        C= verts[2]
+
+        # Bounding box
         minX = round(min(A[0], B[0], C[0]))
         maxX = round(max(A[0], B[0], C[0]))
         minY = round(min(A[1], B[1], C[1]))
         maxY = round(max(A[1], B[1], C[1]))
 
-        colorA = (1,0,0)
-        colorB = (0,1,0)
-        colorC = (0,0,1)
-
+        # Para cada pixel dentro del bounding box
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
-                P = (x,y)
-                
-                try :
-                    u,v,w = Numpi.barycentricCoords(A,B,C,P)
-                    if 0<=u<=1 and 0<=v<=1 and 0<=w<=1: 
+                # Si el pixel está dentro del FrameBuffer
+                if (0 <= x < self.width) and (0 <= y < self.height):
 
+                    P = (x,y)
+                    bCoords = Numpi.barycentricCoords(A, B, C, P)
+
+                    # Si se obtienen coordenadas baricéntricas válidas para este punto
+                    if bCoords != None:
+
+                        u, v, w = bCoords
+
+                        # Se calcula el valor Z para este punto usando las coordenadas baricéntricas
                         z = u * A[2] + v * B[2] + w * C[2]
 
+                        # Si el valor de Z para este punto es menor que el valor guardado en el Z Buffer
                         if z < self.zbuffer[x][y]:
+                            
+                            # Guardamos este valor de Z en el Z Buffer
                             self.zbuffer[x][y] = z
 
-                            uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
-                                   u * vtA[1] + v * vtB[1] + w * vtC[1]
-                                  )
-
+                
+                            # Si contamos un Fragment Shader, obtener el color de ahí.
+                            # Sino, usar el color preestablecido.
                             if self.fragmentShader != None:
-                                colorP = self.fragmentShader(textCoords = uvs, 
-                                                             texture = self.activetexture)
+                                # Mandar los parámetros necesarios al shader
+                                
+                                
+                                
+                                colorP = self.fragmentShader(texture = self.activeTexture,
+                                                             texCoords = texCoords,
+                                                             normals = normals,
+                                                             dLight = self.directionalLight,
+                                                             bCoords = bCoords)
+
+
                                 self.glPoint(x, y, color(colorP[0], colorP[1], colorP[2]))
+                                
                             else:
-                                self.glPoint(x, y, colorP)
-                except:
-                    pass
+                                self.glPoint(x, y)
+
 
     def glViewport(self, x, y, width, height):
         self.vpX =  x
@@ -180,26 +202,22 @@ class Renderer(object):
         
         #Matriz de vista es igual a la inversa de la camara
         self.viewMatrix = Numpi.inverse_matrix(self.camMatrix)
-          
+
+            
     def glLookAt(self, camPos = (0,0,0), eyePos = (0,0,0)):
         worldUp = (0,1,0)
-
-        foward = Numpi.substractionVectors(camPos,eyePos)
-        foward = Numpi.normalizeVector(foward)
-
-        right = Numpi.prodCrossV(worldUp,foward)
-        right = Numpi.normalizeVector(right)
-
-        up = Numpi.prodCrossV(foward,right)
-        up = Numpi.normalizeVector(up)
-
-        self.camMatrix = [[right[0],up[0],foward[0],camPos[0]],
-                          [right[1],up[1],foward[1],camPos[1]],
-                          [right[2],up[2],foward[2],camPos[2]],
+        
+        forward = Numpi.norm_vector(Numpi.vecResta(camPos, eyePos))
+        right = Numpi.norm_vector(Numpi.vecMulti(worldUp, forward))
+        up = Numpi.norm_vector(Numpi.vecMulti(forward, right))
+        
+        self.camMatrix = [[right[0],up[0],forward[0],camPos[0]],
+                          [right[1],up[1],forward[1],camPos[1]],
+                          [right[2],up[2],forward[2],camPos[2]],
                           [0,0,0,1]]
         
-        self.viewMatrix =  instance.invMatrix(self.CamMatrix)
-
+        self.viewMatrix = Numpi.inverse_matrix(self.camMatrix)
+        
     def glProjectionMatrix(self, fov = 60, n= 0.1, f = 1000):
         aspectRatio = self.vpWidth / self.vpHeight
 
@@ -211,13 +229,15 @@ class Renderer(object):
                                 [0,0,-(f+n)/(f-n),-2*f*n/(f-n)],
                                 [0,0,-1,0]]
 
-
-    def glModelMatrix(self, translate = (0,0,0), scale =(1,1,1), rotate=(0,0,0)):
+    def glModelMatrix(self, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
         #np.matrix
         translation = [[1,0,0,translate[0]],
                       [0,1,0,translate[1]],
                       [0,0,1,translate[2]],
                       [0,0,0,1]]
+        
+                # Matrix de rotación
+        
         
         scaleMat = [[scale[0],0,0,0],
                    [0,scale[1],0,0],
@@ -306,6 +326,9 @@ class Renderer(object):
                 limit += 1 
     
     def glLoadModule(self, filename, textureName, translate = (0,0,0),rotate = (0,0,0), scale = (1,1,1)):
+        print(f"Loading module: {filename}")
+        print(f"Loading texture: {textureName}")
+        
         model = Model(filename, translate, rotate, scale)
         model.LoadTexture(textureName)
         
@@ -319,7 +342,7 @@ class Renderer(object):
             
             self.activetexture= model.texture
 
-            mMat = self.glModelMatrix(model.translate, model.scale, model.rotate)
+            mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
             for face in model.faces:
                 verCount = len(face)
