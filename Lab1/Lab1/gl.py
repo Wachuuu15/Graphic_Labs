@@ -5,8 +5,6 @@ from numpi import Numpi
 from texture import Texture
 import math
 
-V2= namedtuple('Point2', ['x', 'y'])
-V3= namedtuple('Point', ['x', 'y', 'z'])
 
 POINTS = 0
 LINES = 1
@@ -32,7 +30,7 @@ def color(r, g, b):
 
 
 class Model(object):
-    def __init__(self, filename, translate=(0,0,0), rotate=(0,0,0), scale=(1,1,1)):
+    def __init__(self, filename, translate = (0,0,0),rotate = (0,0,0), scale = (1,1,1)):
         model= Obj(filename)
 
         self.vertices= model.vertices
@@ -195,7 +193,7 @@ class Renderer(object):
                         [0,0,0,1]]
 
 
-    def glCamMatrix(self, translate=(0,0,0) , rotate = (0,0,0)):
+    def glCamMatrix(self, translate = (0,0,0),rotate = (0,0,0), scale = (1,1,1)):
         #matriz de camara
          #Crea matrix de camara
         self.camMatrix = self.glModelMatrix(translate, rotate)
@@ -229,7 +227,7 @@ class Renderer(object):
                                 [0,0,-(f+n)/(f-n),-2*f*n/(f-n)],
                                 [0,0,-1,0]]
 
-    def glModelMatrix(self, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
+    def glModelMatrix(self, translate = (0,0,0),rotate = (0,0,0), scale = (1,1,1)):
         #np.matrix
         translation = [[1,0,0,translate[0]],
                       [0,1,0,translate[1]],

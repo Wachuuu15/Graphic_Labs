@@ -1,4 +1,4 @@
-from gl import Renderer, V2, V3, color
+from gl import Renderer
 import shaders  
 from obj import Obj
 
@@ -13,7 +13,7 @@ rend.fragmentShader = shaders.waterShader
 
 rend.glLookAt(camPos = (0,0,3), eyePos= (0,0,-5))
 
-rend.glLoadModule(filename = "pinguin_001.obj",
+rend.glLoadModule(filename = "13499_Balloon_Cluster_v1_L2.obj",
                  textureName = "animals-texture.bmp",
                  translate = (0,-2,-5),
                  rotate = (0, 140, 0),
