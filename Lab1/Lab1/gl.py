@@ -4,30 +4,12 @@ from obj import Obj
 from numpi import Numpi
 from texture import Texture
 import math
-
+from support import *
 
 POINTS = 0
 LINES = 1
 TRIANGLES = 2
 QUADS = 3
-
-def char(c):
-    #1 byte
-   return struct.pack('=c', c.encode('ascii'))
-
-def word(w):
-    #2 bytes
-    return struct.pack('=h', w)
-
-def dword(d):
-    #4 bytes
-    return struct.pack('=l', d)
-
-def color(r, g, b):
-    return bytes([int (b * 255),
-                  int(g*255),
-                  int(r*255)])
-
 
 class Model(object):
     def __init__(self, filename, translate = (0,0,0),rotate = (0,0,0), scale = (1,1,1)):
@@ -35,8 +17,8 @@ class Model(object):
 
         self.vertices= model.vertices
         self.texcoords = model.texcoords
-        self.normals= model.normals
-        self.faces= model.faces
+        self.normals = model.normals
+        self.faces = model.faces
 
         self.translate= translate
         self.rotate= rotate
@@ -45,6 +27,12 @@ class Model(object):
             
     def LoadTexture(self, textureName):
         self.texture = Texture(textureName)
+
+    
+    def SetShaders(self, vertexShader, fragmentShader):
+        self.vertexShader= vertexShader
+        self.fragmentShader= fragmentShader
+
 
 class Renderer(object):
     def __init__(self, width, height):
@@ -56,6 +44,8 @@ class Renderer(object):
 
         self.glColor(1,1,1)
 
+        self.background = None
+
         self.objects = []
 
         self.vertexShader = None
@@ -65,45 +55,32 @@ class Renderer(object):
         self.vertexBuffer = []
 
         self.activetexture = None
+        self.activeModelMatrix = None
 
         self.glViewport(0,0,self.width, self.height)
         self.glCamMatrix()
         self.glProjectionMatrix()
+        self.directionalLight = (0,-1,0)
 
-    def glAddVertices(self, vertx):
-        for vert in vertx:
-            self.vertexBuffer.append(vert)
+   
+    def glBackgroundTexture(self, filename):
+        self.background= Texture(filename)
+
+    def glClearBackground(self):
+        self.glClear()
+
+        if self.background:
+            for x in range(self.vpX, self.vpX + self.vpWidth + 1):
+                for y in range(self.vpY, self.vpY + self.vpHeight + 1):
+                    u= (x - self.vpX) / self.vpWidth
+                    v= (y - self.vpY) / self.vpHeight
+
+                    texColor= self.background.getColor(u, v)
+
+                    if texColor:
+                        self.glPoint(x,y, color(texColor[0], texColor[1], texColor[2]))
 
     
-    def glPrimitiveAssemly(self, tVerts, tTextCoords):
-        primitives = []
-        if self.primitiveType == TRIANGLES:
-            for i in range(0, len(tVerts), 3):
-                triangle = []
-                #vertices
-                triangle.append(tVerts[i])
-                triangle.append(tVerts[i+1])
-                triangle.append(tVerts[i+2])
-                #texturas
-                triangle.append(tTextCoords[i])
-                triangle.append(tTextCoords[i+1])
-                triangle.append(tTextCoords[i+2])
-
-                primitives.append(triangle)
-            
-        
-        return primitives
-
-
-    def draw_lines(self, verti):
-        i = 0
-        while i + 1 < len(verti):
-            self.glLine(verti[i], verti[i + 1])
-
-            if i == len(verti) - 2:
-                self.glLine(verti[i + 1], verti[0])
-            i += 1
-
     def glClearColor(self, r, g, b):
         self.clearColor = color(r, g, b)
         
@@ -114,71 +91,117 @@ class Renderer(object):
         self.pixels = [[self.clearColor for y in range(self.height)]
                        for x in range(self.width)]
         
+        # Se crea otra tabla para el Z Buffer. Aquí se guarda la profundidad
+        # de cada pixel, con el valor máximo de profundidad inicial.
         self.zbuffer = [[float('inf') for y in range(self.height)]
                        for x in range(self.width)]
 
+    def glAddVertices(self, vertx):
+        for vert in vertx:
+            self.vertexBuffer.append(vert)
+
+    def draw_lines(self, verti):
+        i = 0
+        while i + 1 < len(verti):
+            self.glLine(verti[i], verti[i + 1])
+
+            if i == len(verti) - 2:
+                self.glLine(verti[i + 1], verti[0])
+            i += 1
+
+ 
+        
     def glPoint(self, x, y, clr = None):
         if(0 <= x < self.width) and (0 <= y < self.height):
             self.pixels[x][y] = clr or self.currColor
-
-
-
+            
     def glTriangle(self, verts, texCoords,normals):
-        # Rederización de un triángulo usando coordenadas baricéntricas.
-        # Se reciben los vertices A, B y C y las coordenadas de
-        # textura vtA, vtB y vtC
-        A= verts[0]
-        B= verts[1]
-        C= verts[2]
+            # Rederización de un triángulo usando coordenadas baricéntricas.
+            # Se reciben los vertices A, B y C y las coordenadas de
+            # textura vtA, vtB y vtC
+            A= verts[0]
+            B= verts[1]
+            C= verts[2]
 
-        # Bounding box
-        minX = round(min(A[0], B[0], C[0]))
-        maxX = round(max(A[0], B[0], C[0]))
-        minY = round(min(A[1], B[1], C[1]))
-        maxY = round(max(A[1], B[1], C[1]))
+            # Bounding box
+            minX = round(min(A[0], B[0], C[0]))
+            maxX = round(max(A[0], B[0], C[0]))
+            minY = round(min(A[1], B[1], C[1]))
+            maxY = round(max(A[1], B[1], C[1]))
 
-        # Para cada pixel dentro del bounding box
-        for x in range(minX, maxX + 1):
-            for y in range(minY, maxY + 1):
-                # Si el pixel está dentro del FrameBuffer
-                if (0 <= x < self.width) and (0 <= y < self.height):
+            # Para cada pixel dentro del bounding box
+            for x in range(minX, maxX + 1):
+                for y in range(minY, maxY + 1):
+                    # Si el pixel está dentro del FrameBuffer
+                    if (0 <= x < self.width) and (0 <= y < self.height):
 
-                    P = (x,y)
-                    bCoords = Numpi.barycentricCoords(A, B, C, P)
+                        P = (x,y)
+                        bCoords = Numpi.barycentricCoords(A, B, C, P)
 
-                    # Si se obtienen coordenadas baricéntricas válidas para este punto
-                    if bCoords != None:
+                        # Si se obtienen coordenadas baricéntricas válidas para este punto
+                        if bCoords != None:
 
-                        u, v, w = bCoords
+                            u, v, w = bCoords
 
-                        # Se calcula el valor Z para este punto usando las coordenadas baricéntricas
-                        z = u * A[2] + v * B[2] + w * C[2]
+                            # Se calcula el valor Z para este punto usando las coordenadas baricéntricas
+                            z = u * A[2] + v * B[2] + w * C[2]
 
-                        # Si el valor de Z para este punto es menor que el valor guardado en el Z Buffer
-                        if z < self.zbuffer[x][y]:
-                            
-                            # Guardamos este valor de Z en el Z Buffer
-                            self.zbuffer[x][y] = z
+                            # Si el valor de Z para este punto es menor que el valor guardado en el Z Buffer
+                            if z < self.zbuffer[x][y]:
+                                
+                                # Guardamos este valor de Z en el Z Buffer
+                                self.zbuffer[x][y] = z
 
+                    
+                                # Si contamos un Fragment Shader, obtener el color de ahí.
+                                # Sino, usar el color preestablecido.
+                                if self.fragmentShader != None:
+                                    # Mandar los parámetros necesarios al shader
+                                    
+                                    
+                                    
+                                    colorP = self.fragmentShader(texture = self.activetexture,
+                                                                texCoords = texCoords,
+                                                                normals = normals,
+                                                                dLight = self.directionalLight,
+                                                                bCoords = bCoords,
+                                                                camMatrix= self.camMatrix,
+                                                                modelMatrix= self.activeModelMatrix,)
+
+
+                                    self.glPoint(x, y, color(colorP[0], colorP[1], colorP[2]))
+                                    
+                                else:
+                                    self.glPoint(x, y)
+
+     
+    def glPrimitiveAssembly(self, tVerts, tTexCoords, tnormals):
+        primitives = [ ]
+        if self.primitiveType == TRIANGLES:
+            for i in range(0, len(tVerts), 3):
+                verts=[]
+                verts.append( tVerts[i] )
+                verts.append( tVerts[i + 1] )
+                verts.append( tVerts[i + 2] )
                 
-                            # Si contamos un Fragment Shader, obtener el color de ahí.
-                            # Sino, usar el color preestablecido.
-                            if self.fragmentShader != None:
-                                # Mandar los parámetros necesarios al shader
-                                
-                                
-                                
-                                colorP = self.fragmentShader(texture = self.activeTexture,
-                                                             texCoords = texCoords,
-                                                             normals = normals,
-                                                             dLight = self.directionalLight,
-                                                             bCoords = bCoords)
+                texCoords=[]
+
+                texCoords.append( tTexCoords[i] )
+                texCoords.append( tTexCoords[i + 1] )
+                texCoords.append( tTexCoords[i + 2] )
 
 
-                                self.glPoint(x, y, color(colorP[0], colorP[1], colorP[2]))
-                                
-                            else:
-                                self.glPoint(x, y)
+                normals=[]
+
+                normals.append(tnormals[i])
+                normals.append(tnormals[i + 1])
+                normals.append(tnormals[i + 2])
+
+                triangle=[verts, texCoords, normals]
+
+                primitives.append(triangle)
+
+        return primitives
 
 
     def glViewport(self, x, y, width, height):
@@ -323,24 +346,27 @@ class Renderer(object):
 
                 limit += 1 
     
-    def glLoadModule(self, filename, textureName, translate = (0,0,0),rotate = (0,0,0), scale = (1,1,1)):
-        print(f"Loading module: {filename}")
-        print(f"Loading texture: {textureName}")
-        
-        model = Model(filename, translate, rotate, scale)
-        model.LoadTexture(textureName)
+    def glAddModel(self, model):
+    
         
         self.objects.append(model)
 
     def glRender(self):
-        transformedVerts = []
-        textCoords = []
 
-        for model in self.objects:
+        transformedVerts = []
+        texCoords = []
+        normals= []
+
+        for model in self.objects:  
+            transformedVerts = []
+            texCoords = []
+            normals= []
             
+            self.vertexShader = model.vertexShader
+            self.fragmentShader = model.fragmentShader
             self.activetexture= model.texture
 
-            mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
+            self.activeModelMatrix = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
             for face in model.faces:
                 verCount = len(face)
@@ -353,22 +379,22 @@ class Renderer(object):
 
                 if self.vertexShader:
                     v0 = self.vertexShader(v0, 
-                                           modelMatrix = mMat,
+                                           modelMatrix = self.activeModelMatrix,
                                            viewMatrix = self.viewMatrix,
                                            projectionMatrix = self.projectionMatrix,
                                            vpMatrix = self.vpMatrix)
                     v1 = self.vertexShader(v1, 
-                                           modelMatrix = mMat,
+                                           modelMatrix = self.activeModelMatrix,
                                            viewMatrix = self.viewMatrix,
                                            projectionMatrix = self.projectionMatrix,
                                            vpMatrix = self.vpMatrix)
                     v2 = self.vertexShader(v2,
-                                           modelMatrix = mMat,
+                                           modelMatrix = self.activeModelMatrix,
                                            viewMatrix = self.viewMatrix,
                                            projectionMatrix = self.projectionMatrix,
                                            vpMatrix = self.vpMatrix)
                     if verCount == 4:
-                        v3 = self.vertexShader(v3, modelMatrix = mMat,
+                        v3 = self.vertexShader(v3, modelMatrix = self.activeModelMatrix,
                                                 viewMatrix = self.viewMatrix,
                                                 projectionMatrix = self.projectionMatrix,
                                                 vpMatrix = self.vpMatrix)
@@ -386,20 +412,34 @@ class Renderer(object):
                 vt2 = model.texcoords[face[2][1]-1]
                 if verCount == 4:
                     vt3 =  model.texcoords[face[3][1]-1]
-                textCoords.append(vt0)
-                textCoords.append(vt1)
-                textCoords.append(vt2)
+                texCoords.append(vt0)
+                texCoords.append(vt1)
+                texCoords.append(vt2)
                 if verCount == 4:
-                    textCoords.append(vt0)
-                    textCoords.append(vt2)
-                    textCoords.append(vt3)
+                    texCoords.append(vt0)
+                    texCoords.append(vt2)
+                    texCoords.append(vt3)
 
-        primitives = self.glPrimitiveAssemly(transformedVerts, textCoords)       
+                 # Obtenemos las normales de la cara actual
+                v0 = model.normals[face[0][2] - 1]
+                v1 = model.normals[face[1][2] - 1]
+                v2 = model.normals[face[2][2] - 1]
+                if verCount == 4:
+                    v3 = model.normals[face[3][2] - 1]
 
-        for prim in primitives: 
-            if self.primitiveType == TRIANGLES:
-                self.glTriangle_bc(prim[0], prim[1], prim[2], 
-                                   prim[3],prim[4],prim[5])
+                normals.append(v0)
+                normals.append(v1)
+                normals.append(v2)
+                if verCount == 4:
+                    normals.append(v0)
+                    normals.append(v2)
+                    normals.append(v3)
+
+            primitives = self.glPrimitiveAssembly(transformedVerts, texCoords, normals)       
+
+            for prim in primitives: 
+                if self.primitiveType == TRIANGLES:
+                    self.glTriangle(prim[0], prim[1], prim[2])
 
 
         

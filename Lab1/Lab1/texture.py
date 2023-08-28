@@ -22,8 +22,16 @@ class Texture(object):
 
                 self.pixels.append(pixelRow)
 
+
     def getColor(self, u, v):
+        # Se regresa el valor del pixel si los valores de las uv
+        # est�n entre 0 y 1.
+        u = u % 1.0
+        v = v % 1.0
+
         if 0<=u<1 and 0<=v<1:
-            return self.pixels[int(v *self.height)][int(u * self.width)]
+            return self.pixels[int(v * self.height)][int(u * self.width)]
         else:
             return None
+
+

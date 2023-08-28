@@ -1,4 +1,6 @@
+from  math import isclose
 import math
+
 class Numpi:
     def multMatrices(m1, m2):
         if len(m1[0]) == len(m2):
@@ -21,30 +23,53 @@ class Numpi:
                 vecRes[i] += (m1[i][j] * vector[j])
 
         return vecRes
-
+    
+    
+    def multi4x4matrix(matrix1, matrix2):
+        resultado = [
+            [0.0,0.0,0.0,0.0],
+            [0.0,0.0,0.0,0.0],
+            [0.0,0.0,0.0,0.0],
+            [0.0,0.0,0.0,0.0]]
+        
+        for i in range(4):
+            for j in range(4):
+                for k in range(4):
+                    resultado[i][j] += matrix1[i][k] * matrix2[k][j]
+        return resultado
+    
     def barycentricCoords(A, B, C, P):
-            areaPCB = abs((P[0]*C[1] + C[0]*B[1] + B[0]*P[1]) - 
-                        (P[1]*C[0] + C[1]*B[0] + B[1]*P[0]))
 
-            areaACP = abs((A[0]*C[1] + C[0]*P[1] + P[0]*A[1]) - 
-                        (A[1]*C[0] + C[1]*P[0] + P[1]*A[0]))
+        areaPCB = abs((P[0]*C[1] + C[0]*B[1] + B[0]*P[1]) - 
+                    (P[1]*C[0] + C[1]*B[0] + B[1]*P[0]))
 
-            areaABP = abs((A[0]*B[1] + B[0]*P[1] + P[0]*A[1]) - 
-                        (A[1]*B[0] + B[1]*P[0] + P[1]*A[0]))
+        areaACP = abs((A[0]*C[1] + C[0]*P[1] + P[0]*A[1]) - 
+                    (A[1]*C[0] + C[1]*P[0] + P[1]*A[0]))
 
-            areaABC = abs((A[0]*B[1] + B[0]*C[1] + C[0]*A[1]) - 
-                        (A[1]*B[0] + B[1]*C[0] + C[1]*A[0]))
-            if areaABC == 0:
-                return None
+        areaABP = abs((A[0]*B[1] + B[0]*P[1] + P[0]*A[1]) - 
+                    (A[1]*B[0] + B[1]*P[0] + P[1]*A[0]))
 
-            u = areaPCB / areaABC
-            v = areaACP / areaABC
-            w = areaABP / areaABC
+        areaABC = abs((A[0]*B[1] + B[0]*C[1] + C[0]*A[1]) - 
+                    (A[1]*B[0] + B[1]*C[0] + C[1]*A[0]))
 
-            if 0<=u<=1 and 0<=v<=1 and 0<=w<=1 and math.isclose(u+v+w, 1.0):
-                return (u, v, w)
-            else:
-                return None
+        # Si el �rea del tri�ngulo es 0, retornar nada para
+        # prevenir divisi�n por 0.
+        if areaABC == 0:
+            return None
+
+        # Determinar las coordenadas baric�ntricas dividiendo el 
+        # �rea de cada subtri�ngulo por el �rea del tri�ngulo mayor.
+        u = areaPCB / areaABC
+        v = areaACP / areaABC
+        w = areaABP / areaABC
+
+        # Si cada coordenada est� entre 0 a 1 y la suma de las tres
+        # es igual a 1, entonces son v�lidas.
+        if 0<=u<=1 and 0<=v<=1 and 0<=w<=1 and isclose(u+v+w, 1.0):
+            return (u, v, w)
+        else:
+            return None
+
 
     def inverse_matrix(matrix):
         if len(matrix) != 4 or len(matrix[0]) != 4:
@@ -103,10 +128,12 @@ class Numpi:
         multi = (rx, ry, rz)
         return multi
     
-    def productoPunto(v1, v2):
-            if len(v1) != 3 or len(v2) != 3:
-                print("Los vectores deben tener tres componentes cada uno.")
-            
-            producto = sum(component1 * component2 for component1, component2 in zip(v1, v2))
-            
-            return producto
+    def dot_product(vector_a, vector_b):
+        if len(vector_a) != len(vector_b):
+            raise ValueError("Los vectores tienen que ser del mismo tamaño")
+        
+        result = 0
+        for i in range(len(vector_a)):
+            result += vector_a[i] * vector_b[i]
+        
+        return result
