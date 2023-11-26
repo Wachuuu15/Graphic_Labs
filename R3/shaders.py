@@ -1,4 +1,4 @@
-from numpi import Numpi
+import numpi as np
 
 def vertexShader(vertex, **kwards):
     modelMatrix = kwards["modelMatrix"]
@@ -11,7 +11,7 @@ def vertexShader(vertex, **kwards):
 
 
     #simbolo de numpy para sacar una matriz de tipo vector
-    vt = Numpi.mulVect(modelMatrix, vt)
+    vt = np.mulVect(modelMatrix, vt)
 
     vt = [vt[0]/vt[3],
           vt[1]/vt[3],
