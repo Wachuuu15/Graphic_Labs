@@ -4,11 +4,20 @@ import shaders
 width = 900
 height = 900
 
-modelFile = "obj/13499_Balloon_Cluster_v1_L2.obj"
+
+modelFile = "obj/air balloon.obj"
+
+
 textureFile = "texture/hea.bmp"
 exitFile = "photoshoots/mediumShot.bmp"
 
 rend = Renderer(width, height)
+
+
+print("Model File:", modelFile)
+rend.glLoadModel(filename=modelFile, textureName=textureFile, translate=(0, 0, -5), rotate=(0, 0, 0), scale=(3, 3, 3))
+
+
 
 rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
