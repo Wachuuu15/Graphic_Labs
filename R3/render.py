@@ -5,7 +5,7 @@ width = 900
 height = 900
 
 modelFile = "obj/13499_Balloon_Cluster_v1_L2.obj"
-textureFile = "texture/13499_Balloon_Cluster_diffuse_ballon_yellow.jpg"
+textureFile = "texture/hea.bmp"
 exitFile = "photoshoots/mediumShot.bmp"
 
 rend = Renderer(width, height)
